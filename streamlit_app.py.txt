@@ -1,0 +1,57 @@
+import streamlit as st
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+
+
+@st.cache_data
+def load_data():
+    return pd.read_csv("diabetes.csv")
+
+data = load_data()
+
+st.sidebar.title("Navigation")
+options = st.sidebar.radio("Go to", ["Home", "Dataset", "Visualization", "Model Training"])
+
+if options == "Home":
+    st.title("Diabetes Prediction App 🏥")
+    st.write("This Streamlit app allows you to explore the diabetes dataset and train a model for predictions.")
+elif options == "Dataset":
+    st.title("Diabetes Dataset 📊")
+    st.write("### Preview of the Dataset:")
+    st.write(data.head())
+    st.write("### Dataset Statistics:")
+    st.write(data.describe())
+elif options == "Visualization":
+    st.title("Data Visualization 📈")
+    st.write("### Correlation Heatmap:")
+    fig, ax = plt.subplots(figsize=(8, 6))
+    sns.heatmap(data.corr(), annot=True, cmap="coolwarm", ax=ax)
+    st.pyplot(fig)
+    st.write("### Distribution of Age:")
+    fig, ax = plt.subplots()
+    sns.histplot(data["age"], bins=10, kde=True, ax=ax)
+    st.pyplot(fig)
+elif options == "Model Training":
+    st.title("Train a Machine Learning Model 🤖")
+    X = data.drop("class", axis=1)
+    y = data["class"]
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    model = RandomForestClassifier(n_estimators=100, random_state=42)
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
+    st.write(f"### Model Accuracy: `{accuracy * 100:.2f}%`")
+    st.write("### Make a Prediction")
+    input_data = []
+    for col in X.columns:
+        input_data.append(st.number_input(f"{col}", value=float(data[col].median())))
+
+    if st.button("Predict"):
+        prediction = model.predict([input_data])
+        result = "Diabetic" if prediction[0] == 1 else "Not Diabetic"
+        st.write(f"### Prediction: `{result}`")
+
